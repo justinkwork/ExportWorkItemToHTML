@@ -1,4 +1,5 @@
-﻿Import-Module smlets
+﻿#Credit to James Palmer for initial request
+Import-Module smlets
 $ErrorActionPreference = "SilentlyContinue"
 
 $form = @"
@@ -58,7 +59,7 @@ $form = @"
 "@
 
 Function Validate-Remote {
-   
+   ## Credit to Tom Hendricks for Remote Computer request
    if ($txtRemote.text -eq "") {
       $computername = $env:COMPUTERNAME
    }
@@ -381,6 +382,38 @@ Function Export-WorkItem {
          }
       }
       $htmlOutput += "</table>"
+      ##Adding Reviwers table to RAs per request by Brad McKenna
+      if ($WorkItem.className -eq 'System.WorkItem.Activity.ReviewActivity') {
+          
+         $rels = Get-SCSMRelationshipObject -Bysource $WorkItem | where {$_.relationshipId -eq '6e05d202-38a4-812e-34b8-b11642001a80'}
+         $revTable = @()
+         foreach ($r in $rels) {
+            $revO = $r.TargetObject
+            if ($revO.DisplayName.Length -gt 0) {
+                $VotedBy = Get-SCSMRelationshipObject -BySource $revO | where {$_.relationshipid -eq '9441a6d1-1317-9520-de37-6c54512feeba'}
+                $assignedReviewer = Get-SCSMRelationshipObject -BySource $revO | where {$_.relationshipid -eq '90da7d7c-948b-e16e-f39a-f6e3d1ffc921'}
+        
+                $values  = $revO.Values
+                $revProps = @{}
+                $revProps | Add-Member -MemberType NoteProperty -Name Reviewer -Value $assignedReviewer.TargetObject.DisplayName
+                $revProps | Add-Member -MemberType NoteProperty -Name VotedBy -Value $VotedBy.TargetObject.DisplayName
+                 
+                foreach ($v in $values) {
+                    switch ($v.Type) {
+                        "Comments" {$revProps | Add-Member -MemberType NoteProperty -Name Comments -Value $v.value.Replace("<br/>","")}
+                        "Decision" {$revProps | Add-Member -MemberType NoteProperty -Name Decision -Value $v.value.DisplayName}
+                        "DecisionDate" {$revProps | Add-Member -MemberType NoteProperty -Name DecisionDate -Value (Date-FromUTC -UTCDate $v.value)}
+                        "Veto" {$revProps | Add-Member -MemberType NoteProperty -Name Veto -Value $v.value}
+                        "MustVote" {$revProps | Add-Member -MemberType NoteProperty -Name MustVote -Value $v.value}
+                     }
+                }
+        
+                $revTable += $revProps | select Reviewer,Decision,DecisionDate,VotedBy,Veto,MustVote,Comments
+            }
+         }
+         $htmlOutput += "<h1>Reviwers</h1>"
+         $htmlOutput += $revTable | ConvertTo-Html -Fragment
+      }
       $htmlOutput += "<h1>Action Log</h1>"
       $ActionLog =  Get-SCSMRelationshipObject -BySource $workItem | ?{$_.targetobject.classname -like "System.workitem.troubleticket*"}
       $actionLogObject = @()
@@ -515,15 +548,15 @@ Function GetWorkItems-FromRange {
    return $workItemObject
 }
 
-Function Get-FileName($initialDirectory)
-{   
- [System.Reflection.Assembly]::LoadWithPartialName("System.windows.forms") | Out-Null
+Function Get-FileName($initialDirectory) {
+    ## This is not a function I wrote.  I cleaned up its formatting to bring it inline with the rest of the code   
+    [System.Reflection.Assembly]::LoadWithPartialName("System.windows.forms") | Out-Null
 
- $OpenFileDialog = New-Object System.Windows.Forms.OpenFileDialog
- $OpenFileDialog.initialDirectory = $initialDirectory
- $OpenFileDialog.filter = "All files (*.*)| *.*"
- $OpenFileDialog.ShowDialog() | Out-Null
- $OpenFileDialog.filename
+    $OpenFileDialog = New-Object System.Windows.Forms.OpenFileDialog
+    $OpenFileDialog.initialDirectory = $initialDirectory
+    $OpenFileDialog.filter = "All files (*.*)| *.*"
+    $OpenFileDialog.ShowDialog() | Out-Null
+    $OpenFileDialog.filename
 } 
 
 $win = Load-Dialog $Form
@@ -590,7 +623,7 @@ $txtRemote.add_LostFocus({
 })
 
 ### Multi Tab ###
-
+## Credit to Jonathan Boles for "range" request
 $dateTo.add_GotKeyboardFocus({ 
    $radDate.IsChecked = $true
 })
