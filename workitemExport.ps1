@@ -1,4 +1,9 @@
-﻿#Credit to James Palmer for initial request
+﻿##Export WorkItem to HTML Version 4.2
+##
+#Credit to James Palmer for initial request
+
+##4.2 Will organize MultiExport work items by Year/Month
+
 Import-Module smlets
 $ErrorActionPreference = "SilentlyContinue"
 
@@ -6,7 +11,7 @@ $form = @"
 <Window 
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Export WorkItem to HTML" Height="372.6" Width="665" MinHeight="361" MinWidth="664" MaxHeight="373" MaxWidth="666">
+        Title="Export WorkItem to HTML v4.2" Height="372.6" Width="665" MinHeight="361" MinWidth="664" MaxHeight="373" MaxWidth="666">
     <TabControl HorizontalAlignment="Left" Height="340" Margin="0,0,0,0" VerticalAlignment="Top" Width="657">
         <TabItem Header="Single">
             <Grid Background="#FFE5E5E5">
@@ -313,9 +318,11 @@ Function Export-WorkItem {
       [parameter(mandatory=$false)][switch]$FromUI,
       [parameter(mandatory=$false)][bool]$GetAttachments,
       [parameter(mandatory=$false)][bool]$GetHistory,
-      [parameter(mandatory=$false)][bool]$ExportChildren
+      [parameter(mandatory=$false)][bool]$ExportChildren,
+      [parameter(mandatory=$false)][switch]$OrganizeByDate
    )
    $WorkItem = Get-WorkItemFromType -WorkItemID $WorkItemID -WorkItemType $WorkItemType
+   
 
    if ($workItem) {
       if (!($Properties)) {
@@ -382,7 +389,7 @@ Function Export-WorkItem {
          }
       }
       $htmlOutput += "</table>"
-      ##Adding Reviwers table to RAs per request by Brad McKenna
+      ##Adding Reviewers table to RAs per request by Brad McKenna
       if ($WorkItem.className -eq 'System.WorkItem.Activity.ReviewActivity') {
           
          $rels = Get-SCSMRelationshipObject -Bysource $WorkItem | where {$_.relationshipId -eq '6e05d202-38a4-812e-34b8-b11642001a80'}
@@ -453,6 +460,9 @@ Function Export-WorkItem {
       $htmlOutput += "</body></html>"
       if (!($SavePath)) {
          $savePath = "$env:USERPROFILE\Desktop\$($workitem.id)"
+      }
+      if ($OrganizeByDate) {
+        $SavePath = Get-DateSavePath -WorkItem $WorkItem -SavePath $SavePath
       }
       if (!(Test-Path $savePath)) {
          mkdir $savePath
@@ -559,6 +569,26 @@ Function Get-FileName($initialDirectory) {
     $OpenFileDialog.filename
 } 
 
+Function Get-DateSavePath {
+    param(
+        $WorkItem,
+        $SavePath
+    )
+    $wi = $WorkItem
+    $dateYear = get-date $wi.createdDate -Format yyyy
+    $dateMonth = get-date $wi.createdDate -Format MM
+    if (!(test-path -Path $savePath\$dateYear)) {
+        mkdir -Path $savePath\$dateYear | Out-Null
+        Write-Warning "make $savePath\$dateYear"
+    }
+    if (!(test-path $savePath\$dateYear\$dateMonth)) {
+        mkdir -path $savePath\$dateYear\$dateMonth | Out-Null
+        Write-Warning "make $savePath\$dateYear\$dateMonth"
+    }
+    $saveDatepath = "$savePath\$dateYear\$dateMonth\$($wi.name)"
+    return $saveDatepath
+}
+
 $win = Load-Dialog $Form
 $cmbWIType.items.add("Incident") | out-null
 $cmbWIType.items.add("Service Request") | Out-Null
@@ -646,14 +676,17 @@ $btnCSVBrowse.add_click({
 })
 
 $btnExportMulti.add_click({
+   $multiExportPath = "$env:USERPROFILE\Desktop\MultiExport\"
    if ($radDate.IsChecked) {
       if ($cmbWIType.SelectedIndex -ge 0) {
          if ((get-date $dateTo.SelectedDate) -gt (get-date $dateFrom.SelectedDate)) {
             $dateWIs = Get-SCSMObject -Class (Get-SCSMClass -name system.workitem$) | `
-            ?{((get-date $_.CreatedDate) -gt (get-date $dateFrom.SelectedDate)) -and ((get-date $_.CreatedDate) -lt (get-date $dateTo.SelectedDate))} | select id
+            ?{((get-date $_.CreatedDate) -gt (get-date $dateFrom.SelectedDate)) -and ((get-date $_.CreatedDate) -lt (get-date $dateTo.SelectedDate))} | select id, name,createddate
             if ($dateWIs) {
+               
                foreach ($wi in $dateWIs) {
-                  Export-WorkItem -WorkItemID $wi.Id -WorkItemType $cmbWIType.SelectedItem -GetRelationships $true -GetAttachments $true -ExportChildren $true -GetHistory $true -SavePath $env:USERPROFILE\Desktop\MultiExport\$($wi.id)
+                  
+                  Export-WorkItem -WorkItemID $wi.Id -WorkItemType $cmbWIType.SelectedItem -GetRelationships $true -GetAttachments $true -ExportChildren $true -GetHistory $true -SavePath $multiExportPath -OrganizeByDate
                }
             }
             else {
@@ -682,7 +715,7 @@ $btnExportMulti.add_click({
                }
                if ($activityList.length -gt 0) {
                   foreach ($a in $activityList) {
-                     Export-WorkItem -WorkItemID $a.Name -WorkItemType $cmbWIType.SelectedItem -GetRelationships $true -GetAttachments $true -ExportChildren $true -GetHistory $true -SavePath C:\Users\scsm_service\Desktop\MultiExport\$($a.Name)
+                     Export-WorkItem -WorkItemID $a.Name -WorkItemType $cmbWIType.SelectedItem -GetRelationships $true -GetAttachments $true -ExportChildren $true -GetHistory $true -SavePath $multiExportPath -OrganizeByDate
                   }
                }
                else {
@@ -693,7 +726,7 @@ $btnExportMulti.add_click({
                $workItemsFromRange = GetWorkItems-FromRange -prefix $WorkItemPrefix -start $rangeStart -end $rangeEnd
                if ($workItemsFromRange) {
                   foreach ($w in $workItemsFromRange) {
-                     Export-WorkItem -WorkItemID $w.id -WorkItemType $cmbWIType.SelectedItem -GetRelationships $true -GetAttachments $true -ExportChildren $true -GetHistory $true -SavePath $env:USERPROFILE\Desktop\MultiExport\$($w.id)
+                     Export-WorkItem -WorkItemID $w.id -WorkItemType $cmbWIType.SelectedItem -GetRelationships $true -GetAttachments $true -ExportChildren $true -GetHistory $true -SavePath $multiExportPath -OrganizeByDate
 
                   }
                }
@@ -720,7 +753,7 @@ $btnExportMulti.add_click({
                   $l = $line.split(",")
                   $workItemID = $l[0]
                   $workItemType = $l[1]
-                  Export-WorkItem -WorkItemID $workItemID -WorkItemType $workItemType -GetRelationships $true -GetAttachments $true -ExportChildren $true -GetHistory $true -SavePath $env:USERPROFILE\Desktop\MultiExport\$($workItemId)
+                  Export-WorkItem -WorkItemID $workItemID -WorkItemType $workItemType -GetRelationships $true -GetAttachments $true -ExportChildren $true -GetHistory $true -SavePath $multiExportPath -OrganizeByDate
                }
             }
             else {
