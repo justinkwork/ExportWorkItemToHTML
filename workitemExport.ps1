@@ -574,18 +574,15 @@ Function Get-DateSavePath {
         $WorkItem,
         $SavePath
     )
-    $wi = $WorkItem
-    $dateYear = get-date $wi.createdDate -Format yyyy
-    $dateMonth = get-date $wi.createdDate -Format MM
+    $dateYear = get-date $workitem.createdDate -Format yyyy
+    $dateMonth = get-date $workitem.createdDate -Format MM
     if (!(test-path -Path $savePath\$dateYear)) {
         mkdir -Path $savePath\$dateYear | Out-Null
-        Write-Warning "make $savePath\$dateYear"
     }
     if (!(test-path $savePath\$dateYear\$dateMonth)) {
         mkdir -path $savePath\$dateYear\$dateMonth | Out-Null
-        Write-Warning "make $savePath\$dateYear\$dateMonth"
     }
-    $saveDatepath = "$savePath\$dateYear\$dateMonth\$($wi.name)"
+    $saveDatepath = "$savePath\$dateYear\$dateMonth\$($workitem.name)"
     return $saveDatepath
 }
 
