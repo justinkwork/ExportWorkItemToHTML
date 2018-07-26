@@ -11,7 +11,7 @@ $form = @"
 <Window 
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Export WorkItem to HTML v4.2" Height="372.6" Width="665" MinHeight="361" MinWidth="664" MaxHeight="373" MaxWidth="666">
+        Title="Export WorkItem to HTML v5" Height="372.6" Width="665" MinHeight="361" MinWidth="664" MaxHeight="373" MaxWidth="666">
     <TabControl HorizontalAlignment="Left" Height="340" Margin="0,0,0,0" VerticalAlignment="Top" Width="657">
         <TabItem Header="Single">
             <Grid Background="#FFE5E5E5">
