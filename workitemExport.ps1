@@ -59,6 +59,13 @@ $form = @"
                 <Button Name="btnExportMulti" Content="Export" HorizontalAlignment="Left" Margin="418,134,0,0" VerticalAlignment="Top" Width="103" Height="38" Background="#FFD8833C"/>
             </Grid>
         </TabItem>
+        <TabItem Header="DataWarehouse">
+            <Grid Background="#FFE5E5E5" Margin="0,-2,0.4,2.2">
+                <TextBox Name="txtWIDDW" HorizontalAlignment="Left" Height="23" Margin="146,36,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="120"/>
+                <Label Content="WorkItem ID:" HorizontalAlignment="Left" Margin="34,33,0,0" VerticalAlignment="Top" Width="107"/>
+                <Button Name="btnExportDW" Content="Export" HorizontalAlignment="Left" Margin="315,36,0,0" VerticalAlignment="Top" Width="153" Height="42" Background="#FFD8833C"/>
+            </Grid>
+        </TabItem>
     </TabControl>
 </Window>
 "@
