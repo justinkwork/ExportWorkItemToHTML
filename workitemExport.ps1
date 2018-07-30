@@ -593,6 +593,44 @@ Function Get-DateSavePath {
     return $saveDatepath
 }
 
+Function Get-DWProperties {
+    param(
+        $WorkItemID,
+        $WworkItemType
+    )
+    $query = "SELECT * FROM "
+}
+Function Get-DWWorkItem {
+    param(
+        $workItemType,
+        $workItemID
+    )
+   
+    switch ($workItemType) {
+        "Incident" {
+            $tblName = "[DWDataMart].[dbo].[IncidentDimvw]"
+         }
+         "Service Request" {
+            $tblName = "[DWDataMart].[dbo].[ServiceRequestDimvw]"
+         }
+         "Change Request" {
+            $tblName = "[DWDataMart].[dbo].[ChangeRequestDimvw]"
+         }
+         "Problem" {
+            $tblName = "[DWDataMart].[dbo].[ProblemDimvw]"
+         }
+         "Activity" {
+            $tblName = "[DWDataMart].[dbo].[ActivityDimvw]"
+         }
+    }
+
+    $query = "SELECT * FROM $tblName WHERE [Id] = '$workItemId'"
+    ## - add dw sql server to UI or just capture it 
+    $retObj = Invoke-Sqlcmd -ServerInstance win16scsm16dw -Database DWDataMart -Query $query
+    return $retObj
+
+}
+
 $win = Load-Dialog $Form
 $cmbWIType.items.add("Incident") | out-null
 $cmbWIType.items.add("Service Request") | Out-Null
@@ -777,4 +815,10 @@ $btnExportMulti.add_click({
    }
 })
 
+### Data Warehouse tab ###
+
+$btnExportDW.add_click({
+   $thisWI = Get-DWWorkItem -workItemType Incident -workItemID ($txtWIDDW.Text) 
+   $thisWI | Out-GridView
+})
 $win.showdialog() | Out-Null
