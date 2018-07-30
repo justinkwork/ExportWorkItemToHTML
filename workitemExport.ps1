@@ -596,7 +596,7 @@ Function Get-DateSavePath {
 Function Get-DWProperties {
     param(
         $WorkItemID,
-        $WworkItemType
+        $WorkItemType
     )
     $query = "SELECT * FROM "
 }
